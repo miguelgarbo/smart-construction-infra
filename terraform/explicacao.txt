@@ -1,3 +1,0 @@
-terraform/
-main.tf variables.tf outputs.tf
-providers.tf backend.tf
