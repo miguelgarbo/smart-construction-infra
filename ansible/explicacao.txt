@@ -1,0 +1,7 @@
+tds playbooks aq 
+
+ansible/
+inventory/ playbook.yml group_vars/
+roles/os_updates/
+roles/docker/
+roles/containers/
