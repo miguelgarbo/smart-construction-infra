@@ -6,8 +6,6 @@ output "public_ip_access" {
 
 
 
-
-
 output "url_app" {
   description = "URL pública para acessar o Smart Construction"
 

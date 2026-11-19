@@ -5,23 +5,23 @@ resource "aws_vpc" "vpc-smart-construction" {
   enable_dns_hostnames = true
 
   tags = {
-      Name = "vpc-smart-construction"
-    }
-  
+    Name = "vpc-smart-construction"
+  }
+
 }
 
 resource "aws_subnet" "subnet-pub" {
-  vpc_id                  = aws_vpc.vpc-smart-construction.id
-  cidr_block              = "10.0.0.0/24"
+  vpc_id            = aws_vpc.vpc-smart-construction.id
+  cidr_block        = "10.0.0.0/24"
   availability_zone = "us-east-1a"
 
   map_public_ip_on_launch = true
 
 
   tags = {
-      Name = "subnet-public-1a"
-    }
-  
+    Name = "subnet-public-1a"
+  }
+
 }
 
 resource "aws_subnet" "subnet-priv-1" {
@@ -36,7 +36,7 @@ resource "aws_subnet" "subnet-priv-1" {
 
 resource "aws_subnet" "subnet-priv-2" {
   vpc_id            = aws_vpc.vpc-smart-construction.id
-  cidr_block        = "10.20.2.0/24"
+  cidr_block        = "10.0.2.0/24"
   availability_zone = "us-east-1b"
 
   tags = {
@@ -53,14 +53,25 @@ resource "aws_internet_gateway" "igw" {
   }
 }
 
-resource "aws_eip" "nat" {
+
+resource "aws_eip" "eip" {
   domain     = "vpc"
   depends_on = [aws_internet_gateway.igw]
+
+  tags = {
+    Name = "elastic-ip-smart-construction"
+  }
+}
+
+resource "aws_nat_gateway" "nat" {
+  allocation_id = aws_eip.eip.id
+  subnet_id     = aws_subnet.subnet-pub.id
 
   tags = {
     Name = "natzao-gateway-smart-construction"
   }
 }
+
 
 resource "aws_route_table" "rt_public" {
   vpc_id = aws_vpc.vpc-smart-construction.id
