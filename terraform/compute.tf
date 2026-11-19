@@ -48,9 +48,7 @@ resource "aws_instance" "ec2-backend" {
   tags = {
     Name = "ec2-smart-construction-backend"
   }
-
 }
-
 
 #EC2 com postgresql 
 resource "aws_instance" "ec2-database" {

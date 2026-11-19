@@ -4,6 +4,19 @@ output "public_ip_access" {
   value = aws_instance.ec2-web.public_ip
 }
 
+output "private_ip_database" {
+  description = "IP privado do banco"
+
+  value = aws_instance.ec2-database.private_ip
+}
+
+output "private_ip_backend" {
+  description = "IP privado do backend"
+
+  value = aws_instance.ec2-backend.private_ip
+}
+
+
 
 
 output "url_app" {
