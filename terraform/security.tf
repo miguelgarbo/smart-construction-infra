@@ -71,6 +71,14 @@ resource "aws_security_group" "sec-backend" {
     security_groups = [aws_security_group.sec-web.id]
   }
 
+  ingress {
+    description     = "SSH via Bastion Host"
+    from_port       = 22
+    to_port         = 22
+    protocol        = "tcp"
+    security_groups = [aws_security_group.ssh.id]
+  }
+
   egress {
     from_port   = 0
     to_port     = 0
@@ -91,5 +99,13 @@ resource "aws_security_group" "sec-database" {
     to_port         = 5432
     protocol        = "tcp"
     security_groups = [aws_security_group.sec-backend.id]
+  }
+
+  ingress {
+    description     = "SSH via Bastion Host"
+    from_port       = 22
+    to_port         = 22
+    protocol        = "tcp"
+    security_groups = [aws_security_group.ssh.id]
   }
 }

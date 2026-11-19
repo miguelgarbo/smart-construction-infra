@@ -17,9 +17,13 @@ resource "aws_instance" "ec2-web" {
   subnet_id     = aws_subnet.subnet-pub.id
 
   associate_public_ip_address = true
+  #criei no console da aws
+  key_name = "smart-construction-key"
 
   vpc_security_group_ids = [
-    aws_security_group.sec-web.id
+    aws_security_group.sec-web.id,
+    aws_security_group.ssh.id
+
   ]
 
   tags = {
@@ -35,6 +39,7 @@ resource "aws_instance" "ec2-backend" {
   instance_type = "t3.micro"
   subnet_id     = aws_subnet.subnet-priv-1.id
 
+  key_name = "smart-construction-key"
 
   vpc_security_group_ids = [
     aws_security_group.sec-backend.id
@@ -52,6 +57,7 @@ resource "aws_instance" "ec2-database" {
   ami           = data.aws_ami.ubuntu.id
   instance_type = "t3.micro"
   subnet_id     = aws_subnet.subnet-priv-2.id
+  key_name      = "smart-construction-key"
 
 
   vpc_security_group_ids = [
