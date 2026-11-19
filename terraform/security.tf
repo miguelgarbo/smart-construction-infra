@@ -27,8 +27,8 @@ resource "aws_security_group" "ssh" {
 }
 
 #EC2 COM O NGINX E O FRONTEND
-resource "aws_security_group" "sec-frontend" {
-  name        = "sec-frontend"
+resource "aws_security_group" "sec-web" {
+  name        = "sec-web"
   description = "Permite acesso a aplicacao pelo nginx"
   vpc_id      = aws_vpc.vpc-smart-construction.id
 
@@ -68,7 +68,7 @@ resource "aws_security_group" "sec-backend" {
     from_port       = 8080
     to_port         = 8080
     protocol        = "tcp"
-    security_groups = [aws_security_group.sec-frontend.id]
+    security_groups = [aws_security_group.sec-web.id]
   }
 
   egress {
