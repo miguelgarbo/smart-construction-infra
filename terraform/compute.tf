@@ -11,7 +11,7 @@ data "aws_ami" "ubuntu" {
 }
 
 #EC2 com nginx e frontend
-resource "aws_instance" "ec2-web" {
+resource "aws_instance" "ec2-app" {
   ami           = data.aws_ami.ubuntu.id
   instance_type = "t3.micro"
   subnet_id     = aws_subnet.subnet-pub.id
@@ -21,7 +21,7 @@ resource "aws_instance" "ec2-web" {
   key_name = "smart-construction-key"
 
   vpc_security_group_ids = [
-    aws_security_group.sec-web.id,
+    aws_security_group.sec-app.id,
     aws_security_group.ssh.id
 
   ]
@@ -37,7 +37,7 @@ resource "aws_instance" "ec2-web" {
 resource "aws_instance" "ec2-backend" {
   ami           = data.aws_ami.ubuntu.id
   instance_type = "t3.micro"
-  subnet_id     = aws_subnet.subnet-priv-1.id
+  subnet_id     = aws_subnet.subnet-priv.id
 
   key_name = "smart-construction-key"
 

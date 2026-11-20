@@ -26,9 +26,9 @@ resource "aws_security_group" "ssh" {
   }
 }
 
-#EC2 COM O NGINX E O FRONTEND
-resource "aws_security_group" "sec-web" {
-  name        = "sec-web"
+#EC2 COM O APP TODO
+resource "aws_security_group" "sec-app" {
+  name        = "sec-app"
   description = "Permite acesso a aplicacao pelo nginx"
   vpc_id      = aws_vpc.vpc-smart-construction.id
 
@@ -54,39 +54,8 @@ resource "aws_security_group" "sec-web" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-
 }
 
-#EC2 COM O BACKEND E OS SEAWEEDFS
-resource "aws_security_group" "sec-backend" {
-  name        = "sec-backend"
-  description = "Permite acesso ao backend apenas pro grupo do frontend"
-  vpc_id      = aws_vpc.vpc-smart-construction.id
-
-  ingress {
-    description     = "HTTP"
-    from_port       = 8080
-    to_port         = 8080
-    protocol        = "tcp"
-    security_groups = [aws_security_group.sec-web.id]
-  }
-
-  ingress {
-    description     = "SSH via Bastion Host"
-    from_port       = 22
-    to_port         = 22
-    protocol        = "tcp"
-    security_groups = [aws_security_group.ssh.id]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-}
 
 #EC2 COM O POSTGRESQL
 resource "aws_security_group" "sec-database" {
@@ -98,14 +67,14 @@ resource "aws_security_group" "sec-database" {
     from_port       = 5432
     to_port         = 5432
     protocol        = "tcp"
-    security_groups = [aws_security_group.sec-backend.id]
+    security_groups = [aws_security_group.sec-app.id]
   }
 
   ingress {
-    description     = "SSH via Bastion Host"
+    description     = "SSH via a ec2 do app"
     from_port       = 22
     to_port         = 22
     protocol        = "tcp"
-    security_groups = [aws_security_group.ssh.id]
+    security_groups = [aws_security_group.sec-app.id]
   }
 }

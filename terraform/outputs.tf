@@ -1,7 +1,7 @@
 output "public_ip_access" {
   description = "IP público da aplicação"
 
-  value = aws_instance.ec2-web.public_ip
+  value = aws_instance.ec2-app.public_ip
 }
 
 output "private_ip_database" {
@@ -10,17 +10,23 @@ output "private_ip_database" {
   value = aws_instance.ec2-database.private_ip
 }
 
-output "private_ip_backend" {
-  description = "IP privado do backend"
+output "private_ip_app" {
+  description = "IP privado do app"
 
-  value = aws_instance.ec2-backend.private_ip
+  value = aws_instance.ec2-app.private_ip
 }
 
+output "ssh_command_app" {
+  description = "Comando ssh pra entrar na maquina do app"
+  value = "ssh -i ~/.ssh/smart-construction-key ubuntu@${aws_instance.ec2-app.public_ip}"
+}
 
-
+output "ssh_command_database" {
+  description = "Comando ssh pra entrar na máquina do banco"
+  value = "ssh -i ~/.ssh/smart-construction-key -J ubuntu@${aws_instance.ec2-app.public_ip} ubuntu@${aws_instance.ec2-database.private_ip}"
+}
 
 output "url_app" {
   description = "URL pública para acessar o Smart Construction"
-
-  value = "http://${aws_instance.ec2-web.public_ip}/"
+  value = "http://${aws_instance.ec2-app.public_ip}/"
 }
