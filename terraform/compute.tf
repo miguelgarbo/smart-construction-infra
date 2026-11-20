@@ -39,7 +39,7 @@ resource "aws_instance" "ec2-app" {
 resource "aws_instance" "ec2-database" {
   ami           = data.aws_ami.ubuntu.id
   instance_type = "t3.micro"
-  subnet_id     = aws_subnet.subnet-priv-2.id
+  subnet_id     = aws_subnet.subnet-priv.id
   key_name      = "smart-construction-key"
 
 
