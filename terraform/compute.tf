@@ -10,7 +10,7 @@ data "aws_ami" "ubuntu" {
   }
 }
 
-#EC2 com nginx e frontend
+#EC2 com o app
 resource "aws_instance" "ec2-app" {
   ami           = data.aws_ami.ubuntu.id
   instance_type = "t3.micro"
@@ -33,22 +33,7 @@ resource "aws_instance" "ec2-app" {
 }
 
 
-#EC2 com backend e seaweed
-resource "aws_instance" "ec2-backend" {
-  ami           = data.aws_ami.ubuntu.id
-  instance_type = "t3.micro"
-  subnet_id     = aws_subnet.subnet-priv.id
 
-  key_name = "smart-construction-key"
-
-  vpc_security_group_ids = [
-    aws_security_group.sec-backend.id
-  ]
-
-  tags = {
-    Name = "ec2-smart-construction-backend"
-  }
-}
 
 #EC2 com postgresql 
 resource "aws_instance" "ec2-database" {

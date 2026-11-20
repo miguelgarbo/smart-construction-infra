@@ -60,7 +60,7 @@ resource "aws_security_group" "sec-app" {
 #EC2 COM O POSTGRESQL
 resource "aws_security_group" "sec-database" {
   name        = "security-database"
-  description = "Libera o banco apenas para o grupo do backend"
+  description = "Libera o banco apenas para o grupo do app"
   vpc_id      = aws_vpc.vpc-smart-construction.id
 
   ingress {
