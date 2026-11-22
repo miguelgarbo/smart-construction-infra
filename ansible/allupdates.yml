@@ -1,0 +1,10 @@
+- hosts: all
+  vars:
+    ansible_host_key_checking: false
+  become: true
+
+  tasks:
+    - name: Update e Upgrade apt packages
+      apt:
+        upgrade_cache: yes
+        upgrade: yes

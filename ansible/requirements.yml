@@ -1,0 +1,5 @@
+colletions:
+  - name: community.general
+  - name: amazon.aws
+  
+# https://docs.ansible.com/projects/ansible/latest/collections/community/general/index.html

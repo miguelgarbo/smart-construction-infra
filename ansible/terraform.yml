@@ -1,0 +1,35 @@
+- name: Terraform smat-construction
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  
+  vars:
+    tf_action: plan                  # plan | apply | destroy
+    auto_approve: false              # trocar para true quando fizer o CI-CD)
+    tf_project_path: "{{ playbook_dir }}/../terraform"
+    tf_plan_file: "{{ tf_project_path }}/smart-construction.tfplan"
+    tf_min_version: "1.17.2"
+    aws_region: us-east-1
+    tf_backend_bucket: smart-construction-tfstate-grupo13
+    create_backend_bucket: true
+    ec2_key_name: smart-construction-key
+    
+  environment:
+    AWS_DEFAULT_REGION: "{{ aws_region }}"
+    
+  tasks:
+  
+    # Backend (bucket)
+    - name: Garante que o bucket do tfstate exsite
+    amazon.aws.s3_bucket:
+      name: "{{ tf_backend_bucket }}"
+      region: "{{ aws_region }}"
+      state: present
+      versioning: true
+      encryption: AES256
+      public_access:
+        block_public_acls: true
+        ignore_public_acls: true
+        block_public_policy: true
+        restrict_public_buckets: true
+    when: create_backend_bucket | bool
