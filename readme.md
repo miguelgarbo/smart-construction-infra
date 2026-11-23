@@ -1,6 +1,8 @@
 ## Infraestrutura do Smart Construction - Terraform + Ansible + GitHub Actions
 
-Projeto fonte:
+Projeto fonte: [https://github.com/LaercioMLB/smart-construction][repo_prof]
+
+[repo_prof]: https://github.com/LaercioMLB/smart-construction
 
 
 
