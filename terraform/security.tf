@@ -77,4 +77,12 @@ resource "aws_security_group" "sec-database" {
     protocol        = "tcp"
     security_groups = [aws_security_group.sec-app.id]
   }
+
+  egress {
+    description = "Liberando trafego aos repositorios para baixar pacotes na internet"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 }
