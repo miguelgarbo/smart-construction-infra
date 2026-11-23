@@ -13,7 +13,7 @@ data "aws_ami" "ubuntu" {
 #EC2 com o app
 resource "aws_instance" "ec2-app" {
   ami           = data.aws_ami.ubuntu.id
-  instance_type = "t3.micro"
+  instance_type = "t3.small"
   subnet_id     = aws_subnet.subnet-pub.id
 
   associate_public_ip_address = true
@@ -38,7 +38,7 @@ resource "aws_instance" "ec2-app" {
 #EC2 com postgresql 
 resource "aws_instance" "ec2-database" {
   ami           = data.aws_ami.ubuntu.id
-  instance_type = "t3.micro"
+  instance_type = "t3.small"
   subnet_id     = aws_subnet.subnet-priv.id
   key_name      = "smart-construction-key"
 
