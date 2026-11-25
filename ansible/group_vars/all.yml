@@ -17,5 +17,5 @@ compose_wait_timeout: 900
 
 db_host_ip: "{{ hostvars['db1'].ansible_host }}"
 app_ip: "{{ hostvars['app1'].ansible_host }}"
-app_domain: "{{ grupo-13_smart_construction }}.sslip.io"
+app_domain: "grupo-13_smart_construction.sslip.io"
 public_url: "{{ ('https://' ~ app_domain) if (https_enabled | bool) else ('http://' ~ app_ip) }}"
