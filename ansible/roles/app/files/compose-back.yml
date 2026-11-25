@@ -1,0 +1,190 @@
+name: smart-construction-backend
+
+#docker compose -f compose-back.yml exec api python -m app.auth.cli create --login admin --nome "Administrador do laboratório"
+
+services:
+  private-storage:
+    image: chrislusf/seaweedfs:4.48
+    entrypoint: ["/bin/sh", "/opt/backend-storage/private-storage.sh"]
+    volumes:
+      - private-storage-data:/data
+      - ./backend/docker:/opt/backend-storage:ro
+    secrets:
+      - private_identities
+      - private_admin_password
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "-q",
+          "-O",
+          "/dev/null",
+          "http://127.0.0.1:9333/cluster/status",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 24
+      start_period: 15s
+    networks:
+      - default
+      - smart-construction-net
+    restart: unless-stopped
+    init: true
+    logging:
+      driver: local
+
+  private-storage-init:
+    image: smart-construction-api:local
+    command: ["python", "-m", "app.arquivos.bootstrap"]
+    environment:
+      SMART_API_S3_ENDPOINT_URL: http://private-storage:8333
+      SMART_API_S3_ACCESS_KEY_FILE: /run/secrets/private_bootstrap_access
+      SMART_API_S3_SECRET_KEY_FILE: /run/secrets/private_bootstrap_secret
+    secrets:
+      - private_bootstrap_access
+      - private_bootstrap_secret
+    depends_on:
+      private-storage:
+        condition: service_healthy
+    networks:
+      - default
+      - smart-construction-net
+    read_only: true
+    tmpfs: ["/tmp"]
+    cap_drop: ["ALL"]
+    security_opt: ["no-new-privileges:true"]
+    restart: "no"
+    logging:
+      driver: local
+
+  backend-setup:
+    image: python:3.12-slim-bookworm
+    profiles: ["tools"]
+    entrypoint:
+      ["python", "/scripts/setup_secrets.py", "--directory", "/secrets"]
+    volumes:
+      - ./backend/scripts:/scripts:ro
+      - ${SMART_SECRETS_DIR:-./.secrets}/backend:/secrets
+    network_mode: none
+
+  api-migrate:
+    image: smart-construction-api:local
+    build:
+      context: ./backend
+      target: runtime
+    command: ["alembic", "upgrade", "head"]
+    environment:
+      SMART_API_DB_HOST: 10.0.1.91
+      SMART_API_DB_USER: smart_migrator
+      SMART_API_DB_PASSWORD_FILE: /run/secrets/migration_password
+    secrets:
+      - migration_password
+    # Sem depends_on do banco: ele está em outra máquina.
+    # Suba a EC2 do banco antes. Se o banco estiver fora do ar, a migração falha.
+    networks:
+      - default
+      - smart-construction-net
+    restart: "no"
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: ["ALL"]
+    security_opt: ["no-new-privileges:true"]
+    logging:
+      driver: local
+
+  api:
+    image: smart-construction-api:local
+    build:
+      context: ./backend
+      target: runtime
+    environment:
+      SMART_API_ENVIRONMENT: ${SMART_API_ENVIRONMENT:-development}
+      SMART_API_ALLOWED_ORIGINS: '["http://44.197.169.32"]'
+      SMART_API_DB_HOST: 10.0.1.91
+      SMART_API_DB_USER: smart_api
+      SMART_API_DB_PASSWORD_FILE: /run/secrets/runtime_password
+      SMART_API_REGISTRATIONS_ENABLED: ${SMART_API_REGISTRATIONS_ENABLED:-true}
+      SMART_API_TERMS_VERSION: ${SMART_API_TERMS_VERSION:-termos-lab-2026-11-11}
+      SMART_API_PRIVACY_VERSION: ${SMART_API_PRIVACY_VERSION:-privacidade-lab-2026-11-11}
+      SMART_API_S3_ENDPOINT_URL: http://private-storage:8333
+      SMART_API_S3_ACCESS_KEY_FILE: /run/secrets/private_api_access
+      SMART_API_S3_SECRET_KEY_FILE: /run/secrets/private_api_secret
+    secrets:
+      - runtime_password
+      - private_api_access
+      - private_api_secret
+    depends_on:
+      api-migrate:
+        condition: service_completed_successfully
+      private-storage-init:
+        condition: service_completed_successfully
+    networks:
+      - default
+      - smart-construction-net
+    init: true
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: ["ALL"]
+    security_opt: ["no-new-privileges:true"]
+    logging:
+      driver: local
+
+  # Atenção: os testes rodam contra o banco remoto definido em DB_HOST.
+  # Use apenas em ambiente de desenvolvimento, nunca contra o banco de produção.
+  api-test:
+    image: smart-construction-api:test
+    build:
+      context: ./backend
+      target: test
+    profiles: ["tools"]
+    environment:
+      SMART_TEST_DB_HOST: 10.0.1.91
+      SMART_TEST_DB_PASSWORD_FILE: /run/secrets/migration_password
+      SMART_TEST_API_PASSWORD_FILE: /run/secrets/runtime_password
+      SMART_TEST_CONTRACT_PATH: /contracts/openapi.json
+      PYTHONPATH: /app
+      SMART_TEST_S3_ENDPOINT_URL: http://private-storage:8333
+      SMART_TEST_S3_ACCESS_KEY_FILE: /run/secrets/private_api_access
+      SMART_TEST_S3_SECRET_KEY_FILE: /run/secrets/private_api_secret
+    secrets:
+      - migration_password
+      - runtime_password
+      - private_api_access
+      - private_api_secret
+    volumes:
+      - ./docs/api/openapi.json:/contracts/openapi.json:ro
+    depends_on:
+      private-storage-init:
+        condition: service_completed_successfully
+    networks:
+      - default
+      - smart-construction-net
+
+volumes:
+  private-storage-data:
+
+networks:
+  smart-construction-net:
+    external: true
+
+secrets:
+  migration_password:
+    file: ${SMART_SECRETS_DIR:-./.secrets}/backend/migration-password
+  runtime_password:
+    file: ${SMART_SECRETS_DIR:-./.secrets}/backend/api-password
+  private_identities:
+    file: ${SMART_SECRETS_DIR:-./.secrets}/backend/s3-identities.json
+  private_admin_password:
+    file: ${SMART_SECRETS_DIR:-./.secrets}/backend/s3-admin-password
+  private_api_access:
+    file: ${SMART_SECRETS_DIR:-./.secrets}/backend/s3-api-access-key
+  private_api_secret:
+    file: ${SMART_SECRETS_DIR:-./.secrets}/backend/s3-api-secret-key
+  private_bootstrap_access:
+    file: ${SMART_SECRETS_DIR:-./.secrets}/backend/s3-bootstrap-access-key
+  private_bootstrap_secret:
+    file: ${SMART_SECRETS_DIR:-./.secrets}/backend/s3-bootstrap-secret-key

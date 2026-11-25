@@ -17,3 +17,29 @@
   ansible.builtin.command: docker compose -f compose-web.yml up -d --build --wait --wait-timeout 300
   args:
     chdir: "{{ app_dir }}"
+
+- name: Aplica seed/configuração de profissões vinculada ao admin
+  ansible.builtin.shell: |
+    set -o pipefail
+    docker compose -f compose-web.yml exec -T api \
+      python -m app.profissoes.cli --apply --admin-login admin
+  args:
+    chdir: /opt/smart-construction-web/smart-construction
+    executable: /bin/bash
+  no_log: true
+  register: profissoes_apply_result
+  changed_when: "'no changes' not in (profissoes_apply_result.stdout ~ profissoes_apply_result.stderr) | lower"
+  failed_when:
+    - profissoes_apply_result.rc != 0
+    - "'already exists' not in (profissoes_apply_result.stdout ~ profissoes_apply_result.stderr) | lower"
+
+- name: Lista/valida profissões cadastradas no backend
+  ansible.builtin.shell: |
+    set -o pipefail
+    docker compose -f compose-web.yml exec -T api \
+      python -m app.profissoes.cli
+  args:
+    chdir: /opt/smart-construction-web/smart-construction
+    executable: /bin/bash
+  register: profissoes_list_result
+  changed_when: false
