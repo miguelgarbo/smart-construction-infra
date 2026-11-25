@@ -1,0 +1,58 @@
+- name: Pasta de configuração do deploy
+  ansible.builtin.file:
+    path: "{{ project_dir }}/deploy"
+    state: directory
+    mode: "0755"
+
+- name: Gera configuração do NGINX
+  ansible.builtin.template:
+    src: nginx.conf.j2
+    dest: "{{ project_dir }}/deploy/nginx.conf"
+    mode: "0644"
+
+- name: Gera override do compose
+  ansible.builtin.template:
+    src: compose.app.yaml.j2
+    dest: "{{ project_dir }}/compose.app.yaml"
+    mode: "0644"
+
+- name: Aguarda resposta do PostgreSQL no db1
+  ansible.builtin.wait_for:
+    host: "{{ db_host_ip }}"
+    port: 5432
+    timeout: 180
+
+- name: Sobe a aplicação
+  community.docker.docker_compose_v2:
+    project_src: "{{ project_dir }}"
+    files:
+      - compose.yaml
+      - compose.app.yaml
+    state: present
+    build: always
+    pull: missing
+    remove_orphans: true
+    wait: true
+    wait_timeout: "{{ compose_wait_timeout | int }}"
+
+- name: Testa o NGINX
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ http_port }}/healthz"
+    status_code: 200
+  register: health
+  retries: 10
+  delay: 6
+  until: health.status == 200
+
+- name: Testa a página pública
+  ansible.builtin.uri:
+    url: "{{ public_url }}/"
+    status_code: 200
+  register: home
+  retries: 10
+  delay: 6
+  until: home.status == 200
+
+- name: Retorna URL funcionando
+  ansible.builtin.debug:
+    msg: "Funcionando: {{ public_url }}/"

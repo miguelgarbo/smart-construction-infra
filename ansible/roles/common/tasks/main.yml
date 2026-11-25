@@ -1,0 +1,57 @@
+- name: Aguarda o cloud-init terminar
+  ansible.builtin.command: cloud-init status --wait
+  register: cloud_init
+  changed_when: false
+  failed_when: cloud_init.rc not in [0, 2]
+
+- name: Atualiza pacotes
+  ansible.builtin.apt:
+    update_cache: true
+    upgrade: safe
+    cache_valid_time: 3600
+    lock_timeout: 300
+
+- name: Instala pacotes necessários
+  ansible.builtin.apt:
+    name:
+      - git
+      - curl
+      - ca-certificates
+      - gnupg
+      - jq
+      - unzip
+    state: present
+    lock_timeout: 300
+
+- name: Ajusta fuso horário
+  community.general.timezone:
+    name: "{{ timezone }}"
+
+- name: Cria swapfile
+  when: ansible_facts['swaptotal_mb'] | int == 0
+  block:
+    - name: Alocar arquivo de swap
+      ansible.builtin.command: "fallocate -l {{ swap_size }} /swapfile"
+      args:
+        creates: /swapfile
+      register: swap_alloc
+
+    - name: Permissões do swapfile
+      ansible.builtin.file:
+        path: /swapfile
+        owner: root
+        group: root
+        mode: "0600"
+
+    - name: Formata swap
+      ansible.builtin.command: mkswap /swapfile
+      when: swap_alloc is changed
+
+    - name: Ativa swap
+      ansible.builtin.command: swapon /swapfile
+
+    - name: Persiste swap
+      ansible.builtin.lineinfile:
+        path: /etc/fstab
+        regexp: '^/swapfile\s'
+        line: "/swapfile none swap sw 0 0"

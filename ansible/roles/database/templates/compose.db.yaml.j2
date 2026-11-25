@@ -1,0 +1,39 @@
+# Gerado pelo Ansible. PostgreSQL 17 isolado na VM db1.
+# Mesma configuração do serviço "db" do compose.yaml da aplicação, mas publicado
+# apenas no IP privado ({{ ansible_host }}). O security group só libera 5432 para o app.
+name: smart-construction
+
+services:
+  db:
+    image: postgres:17-bookworm
+    environment:
+      POSTGRES_DB: smart_construction
+      POSTGRES_USER: smart_migrator
+      POSTGRES_PASSWORD_FILE: /run/secrets/migration_password
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256
+    ports:
+      - "{{ ansible_host }}:5432:5432"
+    volumes:
+      - backend-data:/var/lib/postgresql/data
+      - ./backend/docker/init-db.sh:/docker-entrypoint-initdb.d/10-api-role.sh:ro
+    secrets:
+      - migration_password
+      - runtime_password
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U smart_migrator -d smart_construction']
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+    restart: unless-stopped
+    logging:
+      driver: local
+
+volumes:
+  backend-data:
+
+secrets:
+  migration_password:
+    file: ./.secrets/backend/migration-password
+  runtime_password:
+    file: ./.secrets/backend/api-password

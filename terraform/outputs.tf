@@ -18,15 +18,15 @@ output "private_ip_app" {
 
 output "ssh_command_app" {
   description = "Comando ssh pra entrar na maquina do app"
-  value = "ssh -i ~/.ssh/smart-construction-key.pem ubuntu@${aws_instance.ec2-app.public_ip}"
+  value       = "ssh -i ~/.ssh/smart-construction-key.pem ubuntu@${aws_instance.ec2-app.public_ip}"
 }
 
 output "ssh_command_database" {
   description = "Comando ssh pra entrar na máquina do banco"
-  value = "ssh -i ~/.ssh/smart-construction-key.pem -J ubuntu@${aws_instance.ec2-app.public_ip} ubuntu@${aws_instance.ec2-database.private_ip}"
+  value       = "ssh -i ~/.ssh/smart-construction-key.pem -J ubuntu@${aws_instance.ec2-app.public_ip} ubuntu@${aws_instance.ec2-database.private_ip}"
 }
 
 output "url_app" {
-  description = "URL pública para acessar o Smart Construction"
-  value = "http://${aws_instance.ec2-app.public_ip}/"
+  description = "URL pública para acessar o Smart Construction (HTTPS via sslip.io)"
+  value       = "https://${replace(aws_instance.ec2-app.public_ip, ".", "-")}.sslip.io/"
 }
