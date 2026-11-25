@@ -40,8 +40,8 @@
   ansible.builtin.copy:
     src: "{{ playbook_dir }}/.secrets"
     dest: "{{ db_dir }}"
-    mode: "0600"
-    directory_mode: "0700"
+    mode: "0644"
+    directory_mode: "0755"
 
 - name: Sobe o banco
   ansible.builtin.command: docker compose -f compose-db.yml up -d --wait

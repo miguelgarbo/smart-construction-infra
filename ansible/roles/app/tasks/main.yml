@@ -28,5 +28,5 @@
   ansible.builtin.copy:
     src: "{{ playbook_dir }}/.secrets"
     dest: "{{ app_dir }}"
-    mode: "0600"
-    directory_mode: "0700"
+    mode: "0644"
+    directory_mode: "0755"
