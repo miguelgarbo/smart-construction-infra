@@ -5,7 +5,6 @@ services:
   db:
     image: postgres:17-bookworm
     ports:
-      # Escuta apenas no IP privado da VPC. Nunca use 0.0.0.0 aqui.
       - '5432:5432'
     environment:
       POSTGRES_DB: smart_construction

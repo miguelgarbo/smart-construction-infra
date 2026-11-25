@@ -21,7 +21,7 @@
 
 - name: Copia o compose da app
   ansible.builtin.copy:
-    src: compose-web.yml # vem de roles/app/files/
+    src: compose-web.yml 
     dest: "{{ app_dir }}/compose-web.yml"
 
 - name: Gera os segredos e o .env do backend
