@@ -16,9 +16,20 @@ output "private_ip_app" {
   value = aws_instance.ec2-app.private_ip
 }
 
+output "private_ip_back" {
+  description = "IP privado do back"
+
+  value = aws_instance.ec2-back.private_ip
+}
+
 output "ssh_command_app" {
   description = "Comando ssh pra entrar na maquina do app"
   value       = "ssh -i ~/.ssh/smart-construction-key.pem ubuntu@${aws_instance.ec2-app.public_ip}"
+}
+
+output "ssh_command_back" {
+  description = "Comando ssh pra entrar na máquina do back"
+  value       = "ssh -i ~/.ssh/smart-construction-key.pem -o IdentitiesOnly=yes -o 'ProxyCommand=ssh -i ~/.ssh/smart-construction-key.pem -o IdentitiesOnly=yes -W %h:%p ubuntu@${aws_instance.ec2-app.public_ip}' ubuntu@${aws_instance.ec2-back.private_ip}"
 }
 
 output "ssh_command_database" {

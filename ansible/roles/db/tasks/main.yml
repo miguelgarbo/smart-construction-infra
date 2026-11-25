@@ -33,8 +33,15 @@
 
 - name: Copia o compose do banco
   ansible.builtin.copy:
-    src: compose-db.yml             # vem de roles/db/files/
+    src: compose-db.yml # vem de roles/db/files/
     dest: "{{ db_dir }}/compose-db.yml"
+
+- name: Copia a pasta dos secrets inteira com tudo dentro
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/.secrets"
+    dest: "{{ db_dir }}"
+    mode: "0600"
+    directory_mode: "0700"
 
 - name: Sobe o banco
   ansible.builtin.command: docker compose -f compose-db.yml up -d --wait

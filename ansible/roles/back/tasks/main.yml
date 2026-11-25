@@ -1,0 +1,18 @@
+- name: Clona o projeto
+  ansible.builtin.git:
+    repo: "{{ repo_url }}"
+    dest: "{{ back_dir }}"
+    version: main
+    force: true
+
+- name: Copia o compose do back
+  ansible.builtin.copy:
+    src: compose-back.yml
+    dest: "{{ back_dir }}/compose-back.yml"
+
+- name: Copia a pasta dos secrets inteira com tudo dentro
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/.secrets"
+    dest: "{{ back_dir }}"
+    mode: "0600"
+    directory_mode: "0700"

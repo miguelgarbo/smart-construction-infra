@@ -40,6 +40,33 @@ resource "aws_instance" "ec2-app" {
 
 
 
+#EC2 com o back e o seaweed privado
+resource "aws_instance" "ec2-back" {
+  ami           = data.aws_ami.ubuntu.id
+  instance_type = "t3.small"
+  subnet_id     = aws_subnet.subnet-priv.id
+
+  #criei no console da aws
+  key_name = "smart-construction-key"
+
+  root_block_device {
+    volume_size           = 30
+    volume_type           = "gp3"
+    delete_on_termination = true
+    encrypted             = true
+  }
+
+  vpc_security_group_ids = [
+    aws_security_group.sec-back.id,
+    aws_security_group.ssh.id
+  ]
+
+  tags = {
+    Name = "ec2-smart-construction-back"
+  }
+
+}
+
 
 #EC2 com postgresql 
 resource "aws_instance" "ec2-database" {

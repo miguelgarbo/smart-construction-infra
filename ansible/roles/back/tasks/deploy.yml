@@ -1,0 +1,16 @@
+- name: Atualiza o código
+  ansible.builtin.git:
+    repo: "{{ repo_url }}"
+    dest: "{{ back_dir }}"
+    version: main
+    force: true
+
+- name: Copia o compose do back
+  ansible.builtin.copy:
+    src: compose-back.yml
+    dest: "{{ back_dir }}/compose-back.yml"
+
+- name: Build e up
+  ansible.builtin.command: docker compose -f compose-back.yml up -d --build --wait --wait-timeout 300
+  args:
+    chdir: "{{ back_dir }}"

@@ -1,6 +1,6 @@
 name: smart-construction-backend
 
-#docker compose -f compose-back.yml exec api python -m app.auth.cli create --login admin --nome "Administrador do laboratório"
+# docker compose -f compose-back.yml exec api python -m app.auth.cli create --login admin --nome "Administrador do laboratório"
 
 services:
   private-storage:
@@ -36,6 +36,9 @@ services:
 
   private-storage-init:
     image: smart-construction-api:local
+    build:
+      context: ./backend
+      target: runtime
     command: ["python", "-m", "app.arquivos.bootstrap"]
     environment:
       SMART_API_S3_ENDPOINT_URL: http://private-storage:8333
@@ -75,7 +78,7 @@ services:
       target: runtime
     command: ["alembic", "upgrade", "head"]
     environment:
-      SMART_API_DB_HOST: 10.0.1.91
+      SMART_API_DB_HOST: 10.0.1.104
       SMART_API_DB_USER: smart_migrator
       SMART_API_DB_PASSWORD_FILE: /run/secrets/migration_password
     secrets:
@@ -99,10 +102,12 @@ services:
     build:
       context: ./backend
       target: runtime
+    ports:
+      - "8000:8000"
     environment:
       SMART_API_ENVIRONMENT: ${SMART_API_ENVIRONMENT:-development}
-      SMART_API_ALLOWED_ORIGINS: '["http://44.197.169.32"]'
-      SMART_API_DB_HOST: 10.0.1.91
+      SMART_API_ALLOWED_ORIGINS: '["http://3.237.50.159"]'
+      SMART_API_DB_HOST: 10.0.1.104
       SMART_API_DB_USER: smart_api
       SMART_API_DB_PASSWORD_FILE: /run/secrets/runtime_password
       SMART_API_REGISTRATIONS_ENABLED: ${SMART_API_REGISTRATIONS_ENABLED:-true}
@@ -142,7 +147,7 @@ services:
       target: test
     profiles: ["tools"]
     environment:
-      SMART_TEST_DB_HOST: 10.0.1.91
+      SMART_TEST_DB_HOST: 10.0.1.104
       SMART_TEST_DB_PASSWORD_FILE: /run/secrets/migration_password
       SMART_TEST_API_PASSWORD_FILE: /run/secrets/runtime_password
       SMART_TEST_CONTRACT_PATH: /contracts/openapi.json
@@ -169,7 +174,7 @@ volumes:
 
 networks:
   smart-construction-net:
-    external: true
+    name: smart-construction-net
 
 secrets:
   migration_password:

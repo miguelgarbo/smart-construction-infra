@@ -57,15 +57,15 @@ resource "aws_security_group" "sec-app" {
 }
 
 
-#EC2 COM O POSTGRESQL
-resource "aws_security_group" "sec-database" {
-  name        = "security-database"
-  description = "Libera o banco apenas para o grupo do app"
+#EC2 COM O back
+resource "aws_security_group" "sec-back" {
+  name        = "security-back"
+  description = "Libera o back apenas para o grupo do app"
   vpc_id      = aws_vpc.vpc-smart-construction.id
 
   ingress {
-    from_port       = 5432
-    to_port         = 5432
+    from_port       = 8000
+    to_port         = 8000
     protocol        = "tcp"
     security_groups = [aws_security_group.sec-app.id]
   }
@@ -82,6 +82,53 @@ resource "aws_security_group" "sec-database" {
     description = "Liberando trafego aos repositorios para baixar pacotes na internet"
     from_port   = 443
     to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    description = "Liberando trafego aos repositorios para baixar pacotes na internet"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+
+#EC2 COM O POSTGRESQL
+resource "aws_security_group" "sec-database" {
+  name        = "security-database"
+  description = "Libera o banco apenas para o grupo do app"
+  vpc_id      = aws_vpc.vpc-smart-construction.id
+
+  ingress {
+    from_port       = 5432
+    to_port         = 5432
+    protocol        = "tcp"
+    security_groups = [aws_security_group.sec-back.id]
+  }
+
+  ingress {
+    description     = "SSH via a ec2 do app"
+    from_port       = 22
+    to_port         = 22
+    protocol        = "tcp"
+    security_groups = [aws_security_group.sec-app.id]
+  }
+
+  egress {
+    description = "Liberando trafego aos repositorios para baixar pacotes na internet"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    description = "Liberando trafego aos repositorios para baixar pacotes na internet"
+    from_port   = 80
+    to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }

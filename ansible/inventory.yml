@@ -8,6 +8,7 @@ all:
 
     repo_url: https://github.com/LaercioMLB/smart-construction.git
     app_dir: /opt/smart-construction-web/smart-construction
+    back_dir: /opt/smart-construction-back/smart-construction
     db_dir: /opt/database-smart-construction/smart-construction
 
   children:
@@ -20,6 +21,18 @@ all:
             -o IdentitiesOnly=yes
             -o StrictHostKeyChecking=no
             -o UserKnownHostsFile=/dev/null
+
+    back:
+      hosts:
+        back1:
+          ansible_host: "{{ terraform_outputs.private_ip_back.value }}"
+          ansible_port: 22
+          ansible_ssh_common_args: >-
+            -o IdentitiesOnly=yes
+            -o StrictHostKeyChecking=no
+            -o UserKnownHostsFile=/dev/null
+            -o ProxyCommand="ssh -i {{ ssh_key }} -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -W %h:%p ubuntu@{{ terraform_outputs.public_ip_access.value }}"
+
 
     db:
       hosts:

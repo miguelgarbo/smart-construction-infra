@@ -21,13 +21,12 @@
 
 - name: Copia o compose da app
   ansible.builtin.copy:
-    src: compose-web.yml 
+    src: compose-web.yml
     dest: "{{ app_dir }}/compose-web.yml"
 
-- name: Gera os segredos e o .env do backend
-  ansible.builtin.command: sh scripts/setup.sh
-  args:
-    chdir: "{{ app_dir }}"
-    creates: "{{ app_dir }}/.secrets/backend/migration-password"
-
-  
+- name: Copia a pasta dos secrets inteira com tudo dentro
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/.secrets"
+    dest: "{{ app_dir }}"
+    mode: "0600"
+    directory_mode: "0700"
