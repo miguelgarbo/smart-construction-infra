@@ -33,3 +33,84 @@
         block_public_policy: true
         restrict_public_buckets: true
     when: create_backend_bucket | bool
+
+    # Check de key pair
+    - name: Buscar a key pair do EC2
+      amazon.aws.ec2_key_info:
+        names: ["{{ ec2_key_name }}"]
+        region: "{{ aws_region }}"
+      register: key_info
+      failed_when: false
+      when: tf_action != 'destroy'
+    
+    - name: Falhar se a key pair não existir
+      ansible.builtin.assert:
+        that: (key_info.keypairs | default([])) | length == 1
+        fail_msg: "Chave inexistente em {{ aws_region }}"
+        quiet: true
+      when: tf_action != 'destroy'
+      
+    # Plan
+    - name: Terraform plan
+      community.general.terraform:
+        project_path: "{{ tf_project_path }}"
+        state: planned
+        plan_file: "{{ tf_plan_file }}"
+        force_init: true
+        lock: true
+        lock_timeout: 120
+        variables:
+          aws_region: "{{ aws_region }}"
+      register: tf_plan
+      when: tf_action in ['plan', 'apply']
+      
+    # Apply
+    - name: Confirmar o apply
+      ansible.builtin.pause:
+        prompt: "Digite 'sim' para aplicar"
+      register: apply_confirm
+      when: tf_action == 'apply' and not (auto_approve | bool)
+
+    - name: Abortar se responder 'não'
+      ansible.builtin.assert:
+        that: apply_confirm.user_input | default('') | lower == 'sim'
+        fail_msg: "Apply cancelado"
+        quiet: true
+      when: tf_action == 'apply' and not (auto_approve | bool)
+      
+      - name: Terraform apply
+      community.general.terraform:
+        project_path: "{{ tf_project_path }}"
+        state: present
+        plan_file: "{{ tf_plan_file }}"
+        lock: true
+        lock_timeout: 120
+        variables:
+          aws_region: "{{ aws_region }}"
+      register: tf_apply
+      when: tf_action == 'apply'
+      
+    # Destroy
+    - name: Confirmar o destroy
+      ansible.builtin.pause:
+        prompt: "Digite 'destruir' para continuar"
+      register: destroy_confirm
+      when: tf_action == 'destroy' and not (auto_approve | bool)
+
+    - name: Abortar se cancelado
+      ansible.builtin.assert:
+        that: destroy_confirm.user_input | default('') | lower == 'destruir'
+        fail_msg: "Destroy cancelado"
+        quiet: true
+      when: tf_action == 'destroy' and not (auto_approve | bool)
+
+    - name: Terraform destroy
+      community.general.terraform:
+        project_path: "{{ tf_project_path }}"
+        state: absent
+        force_init: true
+        lock: true
+        lock_timeout: 120
+        variables:
+          aws_region: "{{ aws_region }}"
+      when: tf_action == 'destroy'
