@@ -78,8 +78,7 @@ resource "aws_security_group" "sec-database" {
     security_groups = [aws_security_group.sec-app.id]
   }
 
-  # Sem egress o Terraform remove a regra padrao de saida e o banco nao
-  # consegue baixar pacotes/imagens pelo NAT Gateway.
+  # Estava falhando, essa foi a solução da IA (Se precisar alterar, fique a vontade):
   egress {
     description = "Saida via NAT (apt, Docker Hub, GitHub)"
     from_port   = 0

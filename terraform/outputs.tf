@@ -26,7 +26,8 @@ output "ssh_command_database" {
   value       = "ssh -i ~/.ssh/smart-construction-key.pem -J ubuntu@${aws_instance.ec2-app.public_ip} ubuntu@${aws_instance.ec2-database.private_ip}"
 }
 
+
 output "url_app" {
-  description = "URL pública para acessar o Smart Construction (HTTPS via sslip.io)"
+  description = "URL pública para acessar o Smart Construction"
   value       = "https://${replace(aws_instance.ec2-app.public_ip, ".", "-")}.sslip.io/"
 }

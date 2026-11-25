@@ -13,17 +13,23 @@ data "aws_ami" "ubuntu" {
 #EC2 com o app
 resource "aws_instance" "ec2-app" {
   ami           = data.aws_ami.ubuntu.id
-  instance_type = "t3.micro"
+  instance_type = "t3.small"
   subnet_id     = aws_subnet.subnet-pub.id
 
   associate_public_ip_address = true
   #criei no console da aws
   key_name = "smart-construction-key"
 
+  root_block_device {
+    volume_size           = 30
+    volume_type           = "gp3"
+    delete_on_termination = true
+    encrypted             = true
+  }
+
   vpc_security_group_ids = [
     aws_security_group.sec-app.id,
     aws_security_group.ssh.id
-
   ]
 
   tags = {
@@ -38,9 +44,16 @@ resource "aws_instance" "ec2-app" {
 #EC2 com postgresql 
 resource "aws_instance" "ec2-database" {
   ami           = data.aws_ami.ubuntu.id
-  instance_type = "t3.micro"
+  instance_type = "t3.small"
   subnet_id     = aws_subnet.subnet-priv.id
   key_name      = "smart-construction-key"
+
+  root_block_device {
+    volume_size           = 20
+    volume_type           = "gp3"
+    delete_on_termination = true
+    encrypted             = true
+  }
 
 
   vpc_security_group_ids = [

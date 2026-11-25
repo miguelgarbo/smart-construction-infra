@@ -40,3 +40,4 @@ terraform.rc
 
 # Retry files generated for failed Ansible playbook runs
 *.retry
+terraform/terraform_outputs.json
