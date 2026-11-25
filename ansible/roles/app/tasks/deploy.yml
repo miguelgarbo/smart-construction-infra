@@ -1,0 +1,19 @@
+---
+# Sobe a aplicação. Também serve para redeploy depois de mudar o código.
+
+- name: Atualiza o código
+  ansible.builtin.git:
+    repo: "{{ repo_url }}"
+    dest: "{{ app_dir }}"
+    version: main
+    force: true
+
+- name: Copia o compose da app (o git force sobrescreve o do repositório)
+  ansible.builtin.copy:
+    src: compose-web.yml
+    dest: "{{ app_dir }}/compose-web.yml"
+
+- name: Build e up
+  ansible.builtin.command: docker compose -f compose-web.yml up -d --build --wait --wait-timeout 300
+  args:
+    chdir: "{{ app_dir }}"

@@ -1,0 +1,42 @@
+---
+# Pré-requisito: a role app já gerou os segredos na VM da app.
+
+- name: Clona o projeto (precisa do backend/docker/init-db.sh)
+  ansible.builtin.git:
+    repo: "{{ repo_url }}"
+    dest: "{{ db_dir }}"
+    version: main
+    force: true
+
+- name: Lê as senhas geradas na VM da app
+  ansible.builtin.slurp:
+    src: "{{ app_dir }}/.secrets/backend/{{ item }}"
+  delegate_to: app1
+  loop: [migration-password, api-password]
+  register: senhas
+  no_log: true
+
+- name: Pasta de segredos
+  ansible.builtin.file:
+    path: "{{ db_dir }}/.secrets/backend"
+    state: directory
+    mode: "0700"
+
+- name: Copia as senhas (nunca sobrescreve)
+  ansible.builtin.copy:
+    content: "{{ item.content | b64decode }}"
+    dest: "{{ db_dir }}/.secrets/backend/{{ item.item }}"
+    mode: "0444"
+    force: false
+  loop: "{{ senhas.results }}"
+  no_log: true
+
+- name: Copia o compose do banco
+  ansible.builtin.copy:
+    src: compose-db.yml             # vem de roles/db/files/
+    dest: "{{ db_dir }}/compose-db.yml"
+
+- name: Sobe o banco
+  ansible.builtin.command: docker compose -f compose-db.yml up -d --wait
+  args:
+    chdir: "{{ db_dir }}"

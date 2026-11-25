@@ -1,0 +1,10 @@
+---
+# Valores padrão da role app (podem ser sobrescritos no inventário)
+swap_size_gb: 4
+bind_address: 127.0.0.1
+http_port: 80
+assets_bucket: smart-assets
+registrations_ui_enabled: true
+registrations_enabled: true
+terms_version: termos-lab-2026-11-11
+privacy_version: privacidade-lab-2026-11-11

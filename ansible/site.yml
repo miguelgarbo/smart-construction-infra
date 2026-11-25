@@ -1,0 +1,30 @@
+---
+# PLAYBOOK: lista de plays, executados de cima para baixo.
+- name: Docker nas duas VMs
+  hosts: all
+  become: true
+  roles:
+    - docker
+
+- name: Prepara a VM da aplicação (config, segredos)
+  hosts: app
+  become: true
+  roles:
+    - app
+
+- name: Configura e sobe o banco (usa os segredos gerados na app)
+  hosts: db
+  become: true
+  roles:
+    - db
+
+# O banco precisa estar de pé antes da app subir (o api-migrate conecta nele).
+# Por isso o "deploy" é um segundo uso da role app, só com o arquivo deploy.yml.
+- name: Sobe a aplicação
+  hosts: app
+  become: true
+  tasks:
+    - name: Executa as tasks de deploy da role app
+      ansible.builtin.include_role:
+        name: app
+        tasks_from: deploy

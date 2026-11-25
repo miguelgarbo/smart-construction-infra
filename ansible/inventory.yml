@@ -1,17 +1,34 @@
 all:
   vars:
-    ansible_user: awsuser
-    ansible_ssh_private_key_file: ~/.ssh/id_ed25519
+    ansible_user: ubuntu
+    ssh_key: ~/.ssh/smart-construction-key.pem
+    ansible_ssh_private_key_file: "{{ ssh_key }}"
+
+    terraform_outputs: "{{ lookup('file', playbook_dir ~ '/../terraform/terraform_outputs.json') | from_json }}"
+
+    repo_url: https://github.com/LaercioMLB/smart-construction.git
+    app_dir: /opt/smart-construction-web/smart-construction
+    db_dir: /opt/database-smart-construction/smart-construction
 
   children:
     app:
       hosts:
         app1:
-          ansible_host: "{{ terraform_outputs.app_public_ip.value }}"
+          ansible_host: "{{ terraform_outputs.public_ip_access.value }}"
           ansible_port: 22
+          ansible_ssh_common_args: >-
+            -o IdentitiesOnly=yes
+            -o StrictHostKeyChecking=no
+            -o UserKnownHostsFile=/dev/null
 
     db:
       hosts:
         db1:
-          ansible_host: "{{ terraform_outputs.db_private_ip.value }}"
+          ansible_host: "{{ terraform_outputs.private_ip_database.value }}"
           ansible_port: 22
+          # o banco é privado: entra pela VM da app
+          ansible_ssh_common_args: >-
+            -o IdentitiesOnly=yes
+            -o StrictHostKeyChecking=no
+            -o UserKnownHostsFile=/dev/null
+            -o ProxyCommand="ssh -i {{ ssh_key }} -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -W %h:%p ubuntu@{{ terraform_outputs.public_ip_access.value }}"

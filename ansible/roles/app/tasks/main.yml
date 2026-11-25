@@ -1,0 +1,31 @@
+---
+# Preparação da VM da aplicação (o "up" está em deploy.yml)
+
+- name: Swap (evita o OOM no build do Next.js)
+  ansible.builtin.shell: |
+    set -e
+    fallocate -l {{ swap_size_gb }}G /swapfile
+    chmod 600 /swapfile
+    mkswap /swapfile
+    swapon /swapfile
+    echo '/swapfile none swap sw 0 0' >> /etc/fstab
+  args:
+    creates: /swapfile
+
+- name: Clona o projeto
+  ansible.builtin.git:
+    repo: "{{ repo_url }}"
+    dest: "{{ app_dir }}"
+    version: main
+    force: true
+
+- name: Copia o compose da app
+  ansible.builtin.copy:
+    src: compose-web.yml # vem de roles/app/files/
+    dest: "{{ app_dir }}/compose-web.yml"
+
+- name: Gera os segredos e o .env do backend
+  ansible.builtin.command: sh scripts/setup.sh
+  args:
+    chdir: "{{ app_dir }}"
+    creates: "{{ app_dir }}/.secrets/backend/migration-password"
