@@ -29,5 +29,5 @@ output "ssh_command_database" {
 
 output "url_app" {
   description = "URL pública para acessar o Smart Construction"
-  value       = "https://${replace(aws_instance.ec2-app.public_ip, ".", "-")}.sslip.io/"
+  value       = "https://grupo_13_smart_construction.sslip.io/"
 }
