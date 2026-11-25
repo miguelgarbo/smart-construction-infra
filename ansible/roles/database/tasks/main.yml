@@ -1,0 +1,48 @@
+- name: Clona repositório
+  ansible.builtin.git:
+    repo: "{{ repo_url }}"
+    dest: "{{ project_dir }}"
+    version: "{{ repo_version }}"
+    force: true
+
+- name: Pasta de secrets do backend
+  ansible.builtin.file:
+    path: "{{ project_dir }}/.secrets/backend"
+    state: directory
+    mode: "0700"
+
+- name: Lê senhas geradas no app1
+  ansible.builtin.slurp:
+    src: "{{ project_dir }}/.secrets/backend/{{ item }}"
+  loop:
+    - migration-password
+    - api-password
+  delegate_to: app1
+  register: db_secrets
+  no_log: true
+
+- name: Copia senhas para o db1
+  ansible.builtin.copy:
+    content: "{{ item.content | b64decode }}"
+    dest: "{{ project_dir }}/.secrets/backend/{{ item.item }}"
+    mode: "0644"
+  loop: "{{ db_secrets.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+  no_log: true
+
+- name: Gera compose do banco
+  ansible.builtin.template:
+    src: compose.db.yaml.j2
+    dest: "{{ project_dir }}/compose.db.yaml"
+    mode: "0644"
+
+- name: Sobe o banco de dados
+  community.docker.docker_compose_v2:
+    project_src: "{{ project_dir }}"
+    files:
+      - compose.db.yaml
+    state: present
+    pull: missing
+    wait: true
+    wait_timeout: 300

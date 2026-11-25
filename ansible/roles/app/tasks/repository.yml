@@ -1,0 +1,12 @@
+- name: Clona o repositório
+  ansible.builtin.git:
+    repo: "{{ repo_url }}"
+    dest: "{{ project_dir }}"
+    version: "{{ repo_version }}"
+    force: true
+
+- name: Gera .env e .secrets
+  ansible.builtin.command: sh scripts/setup.sh
+  args:
+    chdir: "{{ project_dir }}"
+    creates: "{{ project_dir }}/.secrets/backend/migration-password"

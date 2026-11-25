@@ -1,0 +1,36 @@
+# Gerado pelo Ansible. Override do compose.yaml para a VM da aplicação:
+# - o PostgreSQL roda na VM exclusiva db1 ({{ db_host_ip }}), então o serviço "db" local é desativado
+# - API e migrações apontam para o IP privado do banco
+# - o Nginx publica as portas 80/443 e usa a configuração gerada em deploy/nginx.conf
+# Requer Docker Compose >= 2.24.4 (tags !reset / !override).
+services:
+  db:
+    profiles: ["banco-remoto"]
+
+  api-migrate:
+    environment:
+      SMART_API_DB_HOST: "{{ db_host_ip }}"
+    depends_on: !reset {}
+
+  api:
+    environment:
+      SMART_API_ENVIRONMENT: "{{ 'production' if (https_enabled | bool) else 'development' }}"
+      SMART_API_ALLOWED_ORIGINS: '["{{ public_url }}"]'
+      SMART_API_DB_HOST: "{{ db_host_ip }}"
+    depends_on: !override
+      api-migrate:
+        condition: service_completed_successfully
+      private-storage-init:
+        condition: service_completed_successfully
+
+  gateway:
+    ports: !override
+      - "0.0.0.0:{{ http_port }}:80"
+{% if https_enabled | bool %}
+      - "0.0.0.0:{{ https_port }}:443"
+{% endif %}
+    volumes: !override
+      - ./deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+{% if https_enabled | bool %}
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+{% endif %}

@@ -78,19 +78,12 @@ resource "aws_security_group" "sec-database" {
     security_groups = [aws_security_group.sec-app.id]
   }
 
+  # Estava falhando, essa foi a solução da IA (Se precisar alterar, fique a vontade):
   egress {
-    description = "Liberando trafego aos repositorios para baixar pacotes na internet"
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    description = "Liberando trafego aos repositorios para baixar pacotes na internet"
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
+    description = "Saida via NAT (apt, Docker Hub, GitHub)"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 }

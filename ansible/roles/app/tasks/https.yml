@@ -1,0 +1,36 @@
+- name: Instala certbot
+  ansible.builtin.apt:
+    name: certbot
+    state: present
+    lock_timeout: 300
+
+- name: Verifica se o certificado já existe
+  ansible.builtin.stat:
+    path: "/etc/letsencrypt/live/{{ app_domain }}/fullchain.pem"
+  register: cert
+
+- name: Libera a porta 80 para o certbot
+  ansible.builtin.command: docker stop smart-construction-gateway-1
+  register: stop_gw
+  changed_when: stop_gw.rc == 0
+  failed_when: false
+  when: not cert.stat.exists
+
+- name: Emite certificado
+  ansible.builtin.command: >-
+    certbot certonly --standalone --non-interactive --agree-tos
+    --register-unsafely-without-email
+    --preferred-challenges http
+    -d {{ app_domain }}
+  when: not cert.stat.exists
+
+- name: Hooks de renovação
+  ansible.builtin.copy:
+    dest: "/etc/letsencrypt/renewal-hooks/{{ item.when }}/gateway.sh"
+    mode: "0755"
+    content: |
+      #!/bin/sh
+      docker {{ item.cmd }} smart-construction-gateway-1 || true
+  loop:
+    - { when: pre, cmd: stop }
+    - { when: post, cmd: start }

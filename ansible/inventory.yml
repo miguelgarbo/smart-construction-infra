@@ -1,17 +1,5 @@
 all:
-  vars:
-    ansible_user: awsuser
-    ansible_ssh_private_key_file: ~/.ssh/id_ed25519
-
-  children:
-    app:
-      hosts:
-        app1:
-          ansible_host: "{{ terraform_outputs.app_public_ip.value }}"
-          ansible_port: 22
-
-    db:
-      hosts:
-        db1:
-          ansible_host: "{{ terraform_outputs.db_private_ip.value }}"
-          ansible_port: 22
+  hosts:
+    localhost:
+      ansible_connection: local
+      ansible_python_interpreter: "{{ ansible_playbook_python }}"

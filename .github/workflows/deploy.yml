@@ -1,0 +1,155 @@
+name: Deploy Smart Construction
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "terraform/**"
+      - "ansible/**"
+      - ".github/workflows/deploy.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "terraform/**"
+      - "ansible/**"
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "O que executar"
+        type: choice
+        options: [apply, destroy]
+        default: apply
+
+concurrency:
+  group: smart-construction-infra
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: us-east-1
+  TF_VAR_aws_region: us-east-1
+  TF_IN_AUTOMATION: "true"
+
+jobs:
+  terraform:
+    name: Terraform
+    if: github.event_name != 'workflow_dispatch' || inputs.action == 'apply'
+    runs-on: ubuntu-latest
+    environment: ${{ github.event_name == 'pull_request' && 'plan' || 'production' }}
+    defaults:
+      run:
+        working-directory: terraform
+    outputs:
+      app_public_ip: ${{ steps.out.outputs.app_public_ip }}
+      app_private_ip: ${{ steps.out.outputs.app_private_ip }}
+      db_private_ip: ${{ steps.out.outputs.db_private_ip }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Init
+        run: terraform init -input=false
+
+      - name: Format
+        continue-on-error: true
+        run: terraform fmt -check -recursive
+
+      - name: Validate
+        run: terraform validate
+
+      - name: Plan
+        run: terraform plan -input=false -out=tfplan
+
+      - name: Apply
+        if: github.event_name != 'pull_request'
+        run: terraform apply -input=false -auto-approve tfplan
+
+      - name: Exporta outputs
+        id: out
+        if: github.event_name != 'pull_request'
+        run: |
+          echo "app_public_ip=$(terraform output -raw public_ip_access)"    >> "$GITHUB_OUTPUT"
+          echo "app_private_ip=$(terraform output -raw private_ip_app)"     >> "$GITHUB_OUTPUT"
+          echo "db_private_ip=$(terraform output -raw private_ip_database)" >> "$GITHUB_OUTPUT"
+
+  ansible:
+    name: Ansible
+    needs: terraform
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    environment: production
+    defaults:
+      run:
+        working-directory: ansible
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instala Ansible e collections
+        run: |
+          pip install "ansible-core>=2.16,<2.18"
+          ansible-galaxy collection install -r requirements.yml
+
+      - name: Configura chave SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          test -n "$SSH_PRIVATE_KEY" || { echo "::error::Secret SSH_PRIVATE_KEY não configurado"; exit 1; }
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/smart-construction-key.pem
+          chmod 600 ~/.ssh/smart-construction-key.pem
+
+      - name: Roda o playbook
+        env:
+          ANSIBLE_CONFIG: ${{ github.workspace }}/ansible/ansible.cfg
+          ANSIBLE_FORCE_COLOR: "1"
+          APP_PUBLIC_IP: ${{ needs.terraform.outputs.app_public_ip }}
+          APP_PRIVATE_IP: ${{ needs.terraform.outputs.app_private_ip }}
+          DB_PRIVATE_IP: ${{ needs.terraform.outputs.db_private_ip }}
+        run: |
+          ansible-playbook main.yml \
+            -e "app_public_ip=$APP_PUBLIC_IP" \
+            -e "app_private_ip=$APP_PRIVATE_IP" \
+            -e "db_private_ip=$DB_PRIVATE_IP"
+
+      - name: Remove chave SSH
+        if: always()
+        run: rm -f ~/.ssh/smart-construction-key.pem
+
+  destroy:
+    name: Terraform destroy
+    if: github.event_name == 'workflow_dispatch' && inputs.action == 'destroy'
+    runs-on: ubuntu-latest
+    environment: production
+    defaults:
+      run:
+        working-directory: terraform
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Init
+        run: terraform init -input=false
+
+      - name: Destroy
+        run: terraform destroy -input=false -auto-approve

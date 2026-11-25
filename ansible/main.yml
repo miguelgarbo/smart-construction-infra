@@ -1,0 +1,80 @@
+- name: Registra os hosts a partir dos outputs do Terraform
+  hosts: localhost
+  gather_facts: false
+  
+  vars_files:
+    - vars.yml
+  
+  tasks:
+    - name: Valida se os IPs foram informados
+      ansible.builtin.assert:
+        that:
+          - app_public_ip is defined and app_public_ip | length > 0
+          - app_private_ip is defined and app_private_ip | length > 0
+          - db_private_ip is defined and db_private_ip | length > 0
+        fail_msg: >-
+          Informe app_public_ip, app_private_ip e db_private_ip via --extra-vars.
+
+    - name: Registra app1
+      ansible.builtin.add_host:
+        name: app1
+        groups: app
+        ansible_host: "{{ app_public_ip }}"
+
+    - name: Registra db1
+      ansible.builtin.add_host:
+        name: db1
+        groups: db
+        ansible_host: "{{ db_private_ip }}"
+        ansible_ssh_common_args: >-
+          -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+          -o ProxyCommand="ssh -W %h:%p -q
+          -i {{ ansible_ssh_private_key_file }}
+          -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null
+          {{ ansible_user }}@{{ app_public_ip }}"
+
+- name: Docker e base dos servidores
+  hosts: app:db
+  become: true
+  gather_facts: false
+  pre_tasks:
+    - name: Aguarda SSH ficar disponível
+      ansible.builtin.wait_for_connection:
+        delay: 5
+        timeout: 300
+
+    - name: Coleta facts
+      ansible.builtin.setup:
+  roles:
+    - common
+    - docker
+
+- name: Clone e Secrets
+  hosts: app
+  become: true
+  tasks:
+    - name: Prepara projeto
+      ansible.builtin.include_role:
+        name: app
+        tasks_from: repository.yml
+
+- name: Sobe o Banco
+  hosts: db
+  become: true
+  roles:
+    - database
+
+- name: Sobe a aplicação
+  hosts: app
+  become: true
+  tasks:
+    - name: Certificado HTTPS
+      ansible.builtin.include_role:
+        name: app
+        tasks_from: https.yml
+      when: https_enabled | bool
+
+    - name: Deploy
+      ansible.builtin.include_role:
+        name: app
+        tasks_from: deploy.yml
