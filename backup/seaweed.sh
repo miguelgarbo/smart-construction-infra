@@ -1,1 +1,0 @@
-docker exec -t postgres-container pg_dump -U postgres -Fc mydatabase > backup.dump

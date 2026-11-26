@@ -10,3 +10,27 @@
   args:
     chdir: "{{ project_dir }}"
     creates: "{{ project_dir }}/.secrets/backend/migration-password"
+
+- name: Cria pasta de backup
+  ansible.builtin.file:
+    path: "{{ project_dir }}/backup_smart_construction"
+    state: directory
+    owner: ubuntu
+    group: ubuntu
+    mode: "0755"
+
+- name: Add script de backup do seaweed
+  ansible.builtin.copy:
+    src: seaweed.sh
+    dest: /opt/seaweed.sh
+    owner: ubuntu
+    group: ubuntu
+    mode: "0755"
+
+- name: Agenda backup diário do seaweed com cron
+  ansible.builtin.cron:
+    name: "Backup seaweed smart-construction para o S3"
+    user: ubuntu
+    minute: "0"
+    hour: "2"
+    job: "/opt/seaweed.sh >> /var/log/backup-postgresql.log 2>&1"

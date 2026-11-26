@@ -63,7 +63,7 @@
     wait: true
     wait_timeout: 300
 
-- name: Agenda backup diario do Banco com CRONTABS
+- name: Agenda backup diario do Banco com cron
   ansible.builtin.cron:
     name: "Backup Banco smart-construction para o S3"
     user: ubuntu
