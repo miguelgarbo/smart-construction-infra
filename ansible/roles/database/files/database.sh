@@ -2,7 +2,7 @@
 
 set -Eeuo pipefail
 
-BACKUP_DIR="/backup_smart_construction"
+BACKUP_DIR="/opt/backup_smart_construction"
 S3_BUCKET="s3://smart-construction-backup/database"
 
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
