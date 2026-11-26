@@ -24,10 +24,20 @@ resource "aws_iam_policy" "policy_backup_s3" {
     Version = "2012-10-17"
     Statement = [
       {
-        Effect = "Allow"
-        Action = [
-          "s3:PutObject"
-        ]
+        Sid      = "ListBackups"
+        Effect   = "Allow"
+        Action   = ["s3:ListBucket"]
+        Resource = "arn:aws:s3:::smart-construction-backup"
+        Condition = {
+          StringLike = {
+            "s3:prefix" = ["database/*", "seaweedfs/*"]
+          }
+        }
+      },
+      {
+        Sid      = "ReadWriteBackups"
+        Effect   = "Allow"
+        Action   = ["s3:PutObject", "s3:GetObject"]
         Resource = "arn:aws:s3:::smart-construction-backup/*"
       }
     ]

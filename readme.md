@@ -235,15 +235,3 @@ As principais atividades são:
 - Criação do usuário administrador inicial.
 - Execução dos comandos de inicialização das profissões.
 
----
-
-## 7. Inicialização da aplicação
-
-Após iniciar os containers, o Ansible executa os comandos necessários para preparar a aplicação.
-
-### Criação do administrador inicial
-
-```bash
-docker compose exec api python -m app.auth.cli create \
-  --login admin \
-  --nome

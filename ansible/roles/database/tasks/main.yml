@@ -21,6 +21,15 @@
     group: ubuntu
     mode: "0755"
 
+- name: Add script de restoure do banco
+  ansible.builtin.copy:
+    src: restoure_last_backup.sh
+    dest: /opt/restoure_last_backup.sh
+    owner: ubuntu
+    group: ubuntu
+    mode: "0755"
+
+
 - name: Pasta de secrets do backend
   ansible.builtin.file:
     path: "{{ project_dir }}/.secrets/backend"
