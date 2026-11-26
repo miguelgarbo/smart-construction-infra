@@ -15,7 +15,7 @@
 
 - name: Add script de backup do banco
   ansible.builtin.copy:
-    src: backup/database.sh
+    src: database.sh
     dest: /opt/database.sh
     owner: ubuntu
     group: ubuntu
@@ -63,7 +63,7 @@
     wait: true
     wait_timeout: 300
 
-- name: Agenda backup diario do Banco
+- name: Agenda backup diario do Banco com CRONTABS
   ansible.builtin.cron:
     name: "Backup Banco smart-construction para o S3"
     user: ubuntu
