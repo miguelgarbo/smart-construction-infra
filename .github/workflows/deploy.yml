@@ -123,10 +123,6 @@ jobs:
             -e "app_private_ip=$APP_PRIVATE_IP" \
             -e "db_private_ip=$DB_PRIVATE_IP"
 
-      - name: Remove chave SSH
-        if: always()
-        run: rm -f ~/.ssh/smart-construction-key.pem
-
   destroy:
     name: Terraform destroy
     if: github.event_name == 'workflow_dispatch' && inputs.action == 'destroy'
