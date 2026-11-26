@@ -55,3 +55,38 @@
         path: /etc/fstab
         regexp: '^/swapfile\s'
         line: "/swapfile none swap sw 0 0"
+
+- name: Baixa pacote de instalação da AWS CLI
+  ansible.builtin.get_url:
+    url: https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip
+    dest: /tmp/awscliv2.zip
+    mode: "0644"
+
+- name: Descompacta AWS CLI
+  ansible.builtin.unarchive:
+    src: /tmp/awscliv2.zip
+    dest: /tmp
+    remote_src: true
+
+- name: Instala AWS CLI 
+  ansible.builtin.command:
+    cmd: /tmp/aws/install
+    creates: /usr/local/bin/aws
+
+- name: Remove arquivos temporários da instalação
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /tmp/awscliv2.zip
+    - /tmp/aws
+
+- name: Verifica instalação da AWS CLI
+  ansible.builtin.command:
+    cmd: aws --version
+  register: aws_cli_version
+  changed_when: false
+
+- name: Exibe versão da AWS CLI
+  ansible.builtin.debug:
+    msg: "{{ aws_cli_version.stdout }}"

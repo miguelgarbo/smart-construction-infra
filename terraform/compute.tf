@@ -1,5 +1,33 @@
-# EC2 NGINX (PROXY REVERSO)
+#regra de acesso ao s3 
+resource "aws_iam_policy" "database_backup_s3" {
+  name = "smart-construction-database-backup"
 
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:PutObject"
+        ]
+        Resource = "arn:aws:s3:::smart-construction-backup/database/*"
+      }
+    ]
+  })
+}
+# associando a regra criada 
+resource "aws_iam_role_policy_attachment" "database_backup_s3" {
+  role       = aws_iam_role.database_role.name
+  policy_arn = aws_iam_policy.database_backup_s3.arn
+}
+
+#usuario com a regra do s3 vinculada
+resource "aws_iam_instance_profile" "database_profile" {
+  name = "smart-construction-database-profile"
+  role = aws_iam_role.database_role.name
+}
+
+#buscando imagem recente do ubuntu
 data "aws_ami" "ubuntu" {
   most_recent = true
   owners      = ["099720109477"]
@@ -43,10 +71,11 @@ resource "aws_instance" "ec2-app" {
 
 #EC2 com postgresql 
 resource "aws_instance" "ec2-database" {
-  ami           = data.aws_ami.ubuntu.id
-  instance_type = "t3.small"
-  subnet_id     = aws_subnet.subnet-priv.id
-  key_name      = "smart-construction-key"
+  ami                  = data.aws_ami.ubuntu.id
+  instance_type        = "t3.small"
+  subnet_id            = aws_subnet.subnet-priv.id
+  key_name             = "smart-construction-key"
+  iam_instance_profile = aws_iam_instance_profile.database_profile.name
 
   root_block_device {
     volume_size           = 20

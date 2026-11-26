@@ -5,6 +5,22 @@
     version: "{{ repo_version }}"
     force: true
 
+- name: Cria pasta de backup
+  ansible.builtin.file:
+    path: "{{ project_dir }}/backup_smart_construction"
+    state: directory
+    owner: ubuntu
+    group: ubuntu
+    mode: "0755"
+
+- name: Add script de backup do banco
+  ansible.builtin.copy:
+    src: backup/database.sh
+    dest: /opt/database.sh
+    owner: ubuntu
+    group: ubuntu
+    mode: "0755"
+
 - name: Pasta de secrets do backend
   ansible.builtin.file:
     path: "{{ project_dir }}/.secrets/backend"
@@ -46,3 +62,11 @@
     pull: missing
     wait: true
     wait_timeout: 300
+
+- name: Agenda backup diario do Banco
+  ansible.builtin.cron:
+    name: "Backup Banco smart-construction para o S3"
+    user: ubuntu
+    minute: "0"
+    hour: "2"
+    job: "/opt/database.sh >> /var/log/backup-postgresql.log 2>&1"
