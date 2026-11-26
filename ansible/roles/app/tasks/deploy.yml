@@ -72,6 +72,10 @@
       'Senha \(12 a 256 caracteres\):': "{{ admin_password }}"
       "Confirme a senha:": "{{ admin_password }}"
     timeout: 60
+  register: admin_creation
+  failed_when:
+    - admin_creation.rc != 0
+    - "'Administrador já existe' not in admin_creation.stdout"
   no_log: true
 
 - name: Verifica profissões disponíveis
