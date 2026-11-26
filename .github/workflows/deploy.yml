@@ -100,11 +100,7 @@ jobs:
         run: |
           pip install "ansible-core>=2.16,<2.18"
           ansible-galaxy collection install -r requirements.yml
-
-      - name: Instala Ansible e collections
-        run: |
-          pip install "ansible-core>=2.16,<2.18"
-          ansible-galaxy collection install -r requirements.yml
+          
 
       - name: Instala dependência do Ansible Expect
         run: pip install pexpect
