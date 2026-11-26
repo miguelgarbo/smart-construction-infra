@@ -79,10 +79,6 @@
     argv:
       - docker
       - compose
-      - -f
-      - compose.yaml
-      - -f
-      - compose.app.yaml
       - exec
       - -T
       - api
@@ -97,10 +93,6 @@
     argv:
       - docker
       - compose
-      - -f
-      - compose.yaml
-      - -f
-      - compose.app.yaml
       - exec
       - -T
       - api
