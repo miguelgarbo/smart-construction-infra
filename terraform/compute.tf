@@ -21,6 +21,11 @@ resource "aws_iam_role_policy_attachment" "database_backup_s3" {
   policy_arn = aws_iam_policy.database_backup_s3.arn
 }
 
+resource "aws_iam_instance_profile" "database_profile" {
+  name = "smart-construction-database-profile"
+  role = aws_iam_role.database_role.name
+}
+
 #usuario com a regra do s3 vinculada
 resource "aws_iam_instance_profile" "database_profile" {
   name = "smart-construction-database-profile"
