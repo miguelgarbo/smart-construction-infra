@@ -73,3 +73,41 @@
       "Confirme a senha:": "{{ admin_password }}"
     timeout: 60
   no_log: true
+
+- name: Verifica profissões disponíveis
+  ansible.builtin.command:
+    argv:
+      - docker
+      - compose
+      - -f
+      - compose.yaml
+      - -f
+      - compose.app.yaml
+      - exec
+      - -T
+      - api
+      - python
+      - -m
+      - app.profissoes.cli
+    chdir: "{{ project_dir }}"
+  changed_when: false
+
+- name: Aplica profissões utilizando administrador
+  ansible.builtin.command:
+    argv:
+      - docker
+      - compose
+      - -f
+      - compose.yaml
+      - -f
+      - compose.app.yaml
+      - exec
+      - -T
+      - api
+      - python
+      - -m
+      - app.profissoes.cli
+      - --apply
+      - --admin-login
+      - admin
+    chdir: "{{ project_dir }}"
