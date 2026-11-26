@@ -56,3 +56,54 @@
 - name: Retorna URL funcionando
   ansible.builtin.debug:
     msg: "Funcionando: {{ public_url }}/"
+
+- name: Cria usuário administrador inicial
+  ansible.builtin.expect:
+    command: >-
+      docker compose
+      -f compose.yaml
+      -f compose.app.yaml
+      exec -T api
+      python -m app.auth.cli create
+      --login admin
+      --nome "Administrador do laboratório"
+    chdir: "{{ project_dir }}"
+    responses:
+      'Senha \(12 a 256 caracteres\):': "{{ admin_password }}"
+      "Confirme a senha:": "{{ admin_password }}"
+    timeout: 60
+  register: admin_creation
+  failed_when:
+    - admin_creation.rc != 0
+    - "'Administrador já existe' not in admin_creation.stdout"
+  no_log: true
+
+- name: Verifica profissões disponíveis
+  ansible.builtin.command:
+    argv:
+      - docker
+      - compose
+      - exec
+      - -T
+      - api
+      - python
+      - -m
+      - app.profissoes.cli
+    chdir: "{{ project_dir }}"
+  changed_when: false
+
+- name: Aplica profissões utilizando administrador
+  ansible.builtin.command:
+    argv:
+      - docker
+      - compose
+      - exec
+      - -T
+      - api
+      - python
+      - -m
+      - app.profissoes.cli
+      - --apply
+      - --admin-login
+      - admin
+    chdir: "{{ project_dir }}"
