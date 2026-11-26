@@ -20,6 +20,7 @@
       - gnupg
       - jq
       - unzip
+      - python3-pexpect
     state: present
     lock_timeout: 300
 
