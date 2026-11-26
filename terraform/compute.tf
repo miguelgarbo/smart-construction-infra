@@ -1,6 +1,24 @@
-#regra de acesso ao s3 
-resource "aws_iam_policy" "database_backup_s3" {
-  name = "smart-construction-database-backup"
+# Role que pemite à EC2 acessar os serviços da AWS
+resource "aws_iam_role" "backup_role" {
+  name = "smart-construction-backup-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+# Regra de acesso ao S3
+resource "aws_iam_policy" "policy_backup_s3" {
+  name = "smart-construction-backup"
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -10,28 +28,22 @@ resource "aws_iam_policy" "database_backup_s3" {
         Action = [
           "s3:PutObject"
         ]
-        Resource = "arn:aws:s3:::smart-construction-backup/database/*"
+        Resource = "arn:aws:s3:::smart-construction-backup/*"
       }
     ]
   })
 }
-# associando a regra criada 
-resource "aws_iam_role_policy_attachment" "database_backup_s3" {
-  role       = aws_iam_role.database_role.name
-  policy_arn = aws_iam_policy.database_backup_s3.arn
+
+
+resource "aws_iam_role_policy_attachment" "smart_construction_backup_s3" {
+  role       = aws_iam_role.backup_role.name
+  policy_arn = aws_iam_policy.policy_backup_s3.arn
 }
 
-resource "aws_iam_instance_profile" "database_profile" {
+resource "aws_iam_instance_profile" "backup_profile" {
   name = "smart-construction-database-profile"
-  role = aws_iam_role.database_role.name
+  role = aws_iam_role.backup_role.name
 }
-
-#usuario com a regra do s3 vinculada
-resource "aws_iam_instance_profile" "database_profile" {
-  name = "smart-construction-database-profile"
-  role = aws_iam_role.database_role.name
-}
-
 #buscando imagem recente do ubuntu
 data "aws_ami" "ubuntu" {
   most_recent = true
@@ -48,6 +60,8 @@ resource "aws_instance" "ec2-app" {
   ami           = data.aws_ami.ubuntu.id
   instance_type = "t3.small"
   subnet_id     = aws_subnet.subnet-pub.id
+
+  iam_instance_profile = aws_iam_instance_profile.backup_profile.name
 
   associate_public_ip_address = true
   #criei no console da aws
@@ -80,7 +94,7 @@ resource "aws_instance" "ec2-database" {
   instance_type        = "t3.small"
   subnet_id            = aws_subnet.subnet-priv.id
   key_name             = "smart-construction-key"
-  iam_instance_profile = aws_iam_instance_profile.database_profile.name
+  iam_instance_profile = aws_iam_instance_profile.backup_profile.name
 
   root_block_device {
     volume_size           = 20
