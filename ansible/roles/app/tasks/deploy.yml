@@ -56,3 +56,21 @@
 - name: Retorna URL funcionando
   ansible.builtin.debug:
     msg: "Funcionando: {{ public_url }}/"
+
+
+- name: Cria usuário administrador inicial
+  ansible.builtin.expect:
+    command: >
+      docker compose
+      -f compose.yaml
+      -f compose.app.yaml
+      exec api
+      python -m app.auth.cli create
+      --login admin
+      --nome "Administrador do laboratório"
+    chdir: "{{ project_dir }}"
+    responses:
+      '(?i)senha.*:': "{{ admin_password }}"
+      '(?i)confirme.*:': "{{ admin_password }}"
+    timeout: 60
+  no_log: true
